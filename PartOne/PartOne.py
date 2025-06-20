@@ -61,16 +61,68 @@ def nltk_ttr(df):
     df["ttr"] = ttr_values
     return df
 
+    
+def flesch_kincaid(df):
+    """
+    Returns a dictionary mapping the title of each novel to the
+    Flesch-Kincaid reading grade level score of the text.
+    Uses the NLTK library for tokenization and the CMU pronouncing
+    dictionary for estimating syllable counts.
+    """
+    from nltk.tokenize import sent_tokenize, word_tokenize
+    from nltk.corpus import cmudict
+
+    cmu = cmudict.dict()
+    scores = {}
+
+    for _, row in df.iterrows():
+        title = row["title"]
+        text  = row["text"]
+
+        # 1. Sentence and word tokenization
+        sentences = sent_tokenize(text)
+        words     = [w for w in word_tokenize(text) if w.isalpha()]
+
+        num_sent  = len(sentences)
+        num_words = len(words)
+
+        # 2. Syllable counting via CMU dict
+        total_syllables = 0
+        for w in words:
+            wl = w.lower()
+            if wl in cmu:
+                # take first pronunciation variant
+                pron = cmu[wl][0]
+                total_syllables += sum(1 for ph in pron if ph[-1].isdigit())
+            else:
+                total_syllables += 1
+
+        # 3. Compute Flesch-Kincaid Grade Level
+        if num_sent == 0 or num_words == 0:
+            fk = 0.0
+        else:
+            fk = (
+                0.39 * (num_words / num_sent)
+              + 11.8 * (total_syllables / num_words)
+              - 15.59
+            )
+
+        scores[title] = round(fk, 2)
+
+    return scores
 
 
 
 
-if __name__ == "__main__":
-    df = read_novels()
-    print(df.head())
+
+
+
 
 
 if __name__ == "__main__":
     df = read_novels()
     df = nltk_ttr(df)
-    print(df[["title", "ttr"]])
+    fk_scores = flesch_kincaid(df)
+    print(fk_scores)
+
+
