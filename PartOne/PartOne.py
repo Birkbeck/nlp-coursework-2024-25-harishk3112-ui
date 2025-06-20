@@ -11,6 +11,9 @@ import spacy
 from pathlib import Path
 from collections import Counter
 
+from nltk.tokenize import word_tokenize
+import string
+
 
 
 
@@ -47,23 +50,28 @@ def read_novels(path=Path("PartOne/novels")):
     df = df.sort_values(by="year").reset_index(drop=True)
     return df
 
+
+
 def nltk_ttr(df):
     """
-    Tokenizes each novel and calculates the type-token ratio.
-    Adds a new column 'ttr' to the DataFrame and returns it.
+    Returns a dictionary mapping each novel title to its type-token ratio (TTR).
+    Tokenization is done using NLTK. Ignores case and punctuation.
     """
-    ttr_values = []
+    ttr_scores = {}
 
-    for text in df["text"]:
-        tokens = text.lower().split()
-        if len(tokens) == 0:
-            ttr = 0
-        else:
+    for _, row in df.iterrows():
+        title = row["title"]
+        text = row["text"]
+
+        tokens = [word.lower() for word in word_tokenize(text) if word.isalpha()]
+        if tokens:
             ttr = len(set(tokens)) / len(tokens)
-        ttr_values.append(ttr)
+        else:
+            ttr = 0.0
 
-    df["ttr"] = ttr_values
-    return df
+        ttr_scores[title] = round(ttr, 4)
+
+    return ttr_scores
 
     
 def flesch_kincaid(df):
@@ -198,25 +206,51 @@ def subjects_by_verb_pmi(doc, target_verb):
 
 
 if __name__ == "__main__":
+    # Q1(a): Read novels
     df = read_novels()
-    df = nltk_ttr(df)
+    print("\nQ1(a) – First 5 rows of the novels dataframe:")
+    print(df[["title", "author", "year"]].head())
+
+    # Q1(b): TTR using NLTK
+    ttr_scores = {}
+    for i, row in df.iterrows():
+        tokens = nltk.word_tokenize(row["text"].lower())
+        tokens = [t for t in tokens if t.isalpha()]
+        ttr = len(set(tokens)) / len(tokens) if tokens else 0
+        ttr_scores[row["title"]] = round(ttr, 4)
+    print("\nQ1(b) – Type-Token Ratios (TTR):")
+    for title, score in ttr_scores.items():
+        print(f"{title}: {score}")
+
+    # Q1(c): Flesch-Kincaid scores
     fk_scores = flesch_kincaid(df)
-    print(fk_scores)
+    print("\nQ1(c) – Flesch-Kincaid Reading Grade Level:")
+    for title, score in fk_scores.items():
+        print(f"{title}: {score}")
+
+    # Q1(e): Parse and pickle novels
     df = parse(df)
 
-    dorian_doc = df[df["title"] == "Dorian_Gray"]["doc"].values[0]
+    # Q1(f)(1): Most common syntactic objects
+    print("\nQ1(f)(1) – Top 10 syntactic objects in each novel:")
+    for _, row in df.iterrows():
+        print(f"\n{row['title']}")
+        for obj, count in object_counts(row["doc"])[:10]:
+            print(f"{obj}: {count}")
 
-    print("\nQ1(f)(1) – Top 10 syntactic objects in 'Dorian_Gray':")
-    for obj, count in object_counts(dorian_doc)[:10]:
-        print(f"{obj}: {count}")
+    # Q1(f)(2): Most common subjects of verb 'hear'
+    print("\nQ1(f)(2) – Top 10 subjects of verb 'hear':")
+    for _, row in df.iterrows():
+        print(f"\n{row['title']}")
+        for subj, count in subjects_by_verb_count(row["doc"], "hear")[:10]:
+            print(f"{subj}: {count}")
 
-    print("\nQ1(f)(2) – Top 10 subjects of verb 'say' in 'Dorian_Gray':")
-    for subj, count in subjects_by_verb_count(dorian_doc, "say")[:10]:
-        print(f"{subj}: {count}")
-
-    print("\nQ1(f)(3) – PMI scores for subjects of verb 'say' in 'Dorian_Gray':")
-    for subj, pmi in subjects_by_verb_pmi(dorian_doc, "say")[:10]:
-        print(f"{subj}: {pmi}")
+    # Q1(f)(3): PMI scores for subjects of 'hear'
+    print("\nQ1(f)(3) – PMI scores for subjects of 'hear':")
+    for _, row in df.iterrows():
+        print(f"\n{row['title']}")
+        for subj, pmi in subjects_by_verb_pmi(row["doc"], "hear")[:10]:
+            print(f"{subj}: {pmi}")
 
 
    
