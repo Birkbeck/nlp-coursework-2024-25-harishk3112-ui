@@ -8,6 +8,7 @@ import pandas as pd
 import nltk
 import spacy
 from pathlib import Path
+from collections import Counter
 
 
 nlp = spacy.load("en_core_web_sm")
@@ -133,6 +134,30 @@ def parse(df, pickle_path=Path("PartOne/parsed_novels.pkl")):
     return pd.read_pickle(pickle_path)
 
 
+def subjects_by_verb_count(doc, verb):
+    """
+    Extracts the most common subjects of a given verb in a parsed document.
+    Returns a list of (subject, count) tuples.
+    """
+    subj_counter = Counter()
+    for token in doc:
+        if token.dep_ in ("nsubj", "nsubjpass") and token.head.lemma_ == verb:
+            subj_counter[token.text.lower()] += 1
+    return subj_counter.most_common()
+
+
+def object_counts(doc):
+    """
+    Extracts the most common syntactic objects in a parsed document.
+    Returns a list of (object, count) tuples.
+    """
+    obj_counter = Counter()
+    for token in doc:
+        if token.dep_ in ("dobj", "obj"):
+            obj_counter[token.text.lower()] += 1
+    return obj_counter.most_common()
+
+
 
 
 
@@ -144,5 +169,18 @@ if __name__ == "__main__":
     df = parse(df)
     # sanity‐check first few docs
     print(df[["title","doc"]].head())
+
+        # Q1(f): Analyse parsed novel "Dorian_Gray"
+    dorian_doc = df[df["title"] == "Dorian_Gray"]["doc"].values[0]
+
+    print("\nQ1(f) – Top 10 syntactic objects in 'Dorian_Gray':")
+    for obj, count in object_counts(dorian_doc)[:10]:
+        print(f"{obj}: {count}")
+
+    print("\nQ1(f) – Top 10 subjects of verb 'say' in 'Dorian_Gray':")
+    for subj, count in subjects_by_verb_count(dorian_doc, "say")[:10]:
+        print(f"{subj}: {count}")
+
+   
 
 
