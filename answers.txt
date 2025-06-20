@@ -1,1 +1,11 @@
 Answers to the text questions go here.
+
+Q1.(D) 
+
+-Very Short Texts: Flesch–Kincaid uses average sentence length and syllable count. 
+                    For example in a small title/tweet , just a single short sentence or a one long word will throw these averages off. 
+                    The score then does not show real reading difficulty.
+        
+-Specialized language: There are languages which includes names,slang,technical terms, dialogue which does not follow normal English patterns.
+                       The syllable counts and sentence structure which it knows is not there so the grade level can be too high or too low.
+    
