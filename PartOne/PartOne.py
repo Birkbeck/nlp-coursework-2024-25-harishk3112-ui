@@ -111,6 +111,26 @@ def flesch_kincaid(df):
 
     return scores
 
+from pathlib import Path
+import pandas as pd
+
+def parse(df, pickle_path=Path("PartOne/parsed_novels.pkl")):
+    """
+    Q1(e): Parse each novel’s text with spaCy, pickle the DataFrame,
+    then load it back and return it (with a new 'doc' column of Doc objects).
+    """
+    # 1. run nlp() over each raw text
+    parsed_docs = [ nlp(text) for text in df["text"] ]
+
+    # 2. attach to a copy of the DataFrame
+    df2 = df.copy()
+    df2["doc"] = parsed_docs
+
+    # 3. write out & immediately reload from pickle
+    print(f"→ parse(): writing pickle to {pickle_path}")
+    df2.to_pickle(pickle_path)
+    print("✓ parse(): pickle created")
+    return pd.read_pickle(pickle_path)
 
 
 
@@ -121,5 +141,8 @@ if __name__ == "__main__":
     df = nltk_ttr(df)
     fk_scores = flesch_kincaid(df)
     print(fk_scores)
+    df = parse(df)
+    # sanity‐check first few docs
+    print(df[["title","doc"]].head())
 
 
