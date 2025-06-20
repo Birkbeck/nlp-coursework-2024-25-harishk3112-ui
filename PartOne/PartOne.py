@@ -116,9 +116,6 @@ def flesch_kincaid(df):
 
 
 
-
-
-
 if __name__ == "__main__":
     df = read_novels()
     df = nltk_ttr(df)

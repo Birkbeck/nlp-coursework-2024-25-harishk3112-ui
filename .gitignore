@@ -1,3 +1,6 @@
+# don’t track our spaCy pickle cache
+PartOne/parsed_novels.pkl
+
 # ignore the texts to avoid large github upload. PN
 p1-texts/novels/
 p2-texts/
