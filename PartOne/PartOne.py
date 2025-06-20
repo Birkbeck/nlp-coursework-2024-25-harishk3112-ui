@@ -4,11 +4,14 @@
 
 import os
 import pandas as pd
+import math
 
 import nltk
 import spacy
 from pathlib import Path
 from collections import Counter
+
+
 
 
 nlp = spacy.load("en_core_web_sm")
@@ -112,8 +115,7 @@ def flesch_kincaid(df):
 
     return scores
 
-from pathlib import Path
-import pandas as pd
+
 
 def parse(df, pickle_path=Path("PartOne/parsed_novels.pkl")):
     """
@@ -134,9 +136,11 @@ def parse(df, pickle_path=Path("PartOne/parsed_novels.pkl")):
     return pd.read_pickle(pickle_path)
 
 
+
+
 def subjects_by_verb_count(doc, verb):
     """
-    Extracts the most common subjects of a given verb in a parsed document.
+    Q1(f)(2): Extract the most common subjects of a given verb in a parsed document.
     Returns a list of (subject, count) tuples.
     """
     subj_counter = Counter()
@@ -148,7 +152,7 @@ def subjects_by_verb_count(doc, verb):
 
 def object_counts(doc):
     """
-    Extracts the most common syntactic objects in a parsed document.
+    Q1(f)(1): Extract the most common syntactic objects in a parsed document.
     Returns a list of (object, count) tuples.
     """
     obj_counter = Counter()
@@ -156,6 +160,38 @@ def object_counts(doc):
         if token.dep_ in ("dobj", "obj"):
             obj_counter[token.text.lower()] += 1
     return obj_counter.most_common()
+
+
+def subjects_by_verb_pmi(doc, target_verb):
+    """
+    Q1(f)(3): Computes PMI between subjects and a specific verb.
+    Returns list of (subject, PMI) tuples, sorted by PMI descending.
+    """
+    subj_verb_pairs = Counter()
+    subj_counts = Counter()
+    verb_counts = Counter()
+
+    for token in doc:
+        if token.dep_ in ("nsubj", "nsubjpass") and token.head.lemma_ == target_verb:
+            subj = token.text.lower()
+            subj_verb_pairs[subj] += 1
+            subj_counts[subj] += 1
+            verb_counts[target_verb] += 1
+
+    total = sum(subj_verb_pairs.values())
+    pmi_scores = []
+
+    for subj in subj_verb_pairs:
+        joint = subj_verb_pairs[subj] / total
+        p_subj = subj_counts[subj] / total
+        p_verb = verb_counts[target_verb] / total
+
+        if p_subj > 0 and p_verb > 0:
+            pmi = math.log2(joint / (p_subj * p_verb))
+            pmi_scores.append((subj, round(pmi, 3)))
+
+    return sorted(pmi_scores, key=lambda x: x[1], reverse=True)
+
 
 
 
@@ -167,19 +203,21 @@ if __name__ == "__main__":
     fk_scores = flesch_kincaid(df)
     print(fk_scores)
     df = parse(df)
-    # sanity‐check first few docs
-    print(df[["title","doc"]].head())
 
-        # Q1(f): Analyse parsed novel "Dorian_Gray"
     dorian_doc = df[df["title"] == "Dorian_Gray"]["doc"].values[0]
 
-    print("\nQ1(f) – Top 10 syntactic objects in 'Dorian_Gray':")
+    print("\nQ1(f)(1) – Top 10 syntactic objects in 'Dorian_Gray':")
     for obj, count in object_counts(dorian_doc)[:10]:
         print(f"{obj}: {count}")
 
-    print("\nQ1(f) – Top 10 subjects of verb 'say' in 'Dorian_Gray':")
+    print("\nQ1(f)(2) – Top 10 subjects of verb 'say' in 'Dorian_Gray':")
     for subj, count in subjects_by_verb_count(dorian_doc, "say")[:10]:
         print(f"{subj}: {count}")
+
+    print("\nQ1(f)(3) – PMI scores for subjects of verb 'say' in 'Dorian_Gray':")
+    for subj, pmi in subjects_by_verb_pmi(dorian_doc, "say")[:10]:
+        print(f"{subj}: {pmi}")
+
 
    
 
