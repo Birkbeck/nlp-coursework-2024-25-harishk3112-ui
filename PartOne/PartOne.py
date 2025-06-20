@@ -1,6 +1,7 @@
 #Re-assessment template 2025
 
 # Note: The template functions here and the dataframe format for structuring your solution is a suggested but not mandatory approach. You can use a different approach if you like, as long as you clearly answer the questions and communicate your answers clearly.
+
 import os
 import pandas as pd
 
@@ -42,8 +43,34 @@ def read_novels(path=Path("PartOne/novels")):
     df = df.sort_values(by="year").reset_index(drop=True)
     return df
 
+def nltk_ttr(df):
+    """
+    Tokenizes each novel and calculates the type-token ratio.
+    Adds a new column 'ttr' to the DataFrame and returns it.
+    """
+    ttr_values = []
+
+    for text in df["text"]:
+        tokens = text.lower().split()
+        if len(tokens) == 0:
+            ttr = 0
+        else:
+            ttr = len(set(tokens)) / len(tokens)
+        ttr_values.append(ttr)
+
+    df["ttr"] = ttr_values
+    return df
+
+
+
 
 
 if __name__ == "__main__":
     df = read_novels()
     print(df.head())
+
+
+if __name__ == "__main__":
+    df = read_novels()
+    df = nltk_ttr(df)
+    print(df[["title", "ttr"]])
