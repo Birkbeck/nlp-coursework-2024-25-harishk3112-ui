@@ -7,6 +7,11 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score, classification_report
 
 import re
+import spacy
+
+
+# Load spaCy model
+nlp = spacy.load("en_core_web_sm")
 
 
 
@@ -111,28 +116,24 @@ print("Classification Report:\n", classification_report(y_test_ngram, svm_ngram_
 
 
 # Q2(e) : Evaluate models with custom tokenizer
-# Simple custom tokenizer using basic regex
-def simple_tokenizer(text):
-    tokens = re.findall(r"\b\w+\b", text.lower())
-    return tokens
+def custom_tokenizer_lemmatized(text):
+    doc = nlp(text)
+    return [
+        token.lemma_.lower() for token in doc
+        if token.is_alpha and not token.is_stop
+    ]
 
-# Apply TF-IDF with this custom tokenizer (limit to 3000 features, using up to trigrams)
-custom_vectorizer = TfidfVectorizer(tokenizer=simple_tokenizer, ngram_range=(1, 3), max_features=3000)
+# Apply new TF-IDF with custom tokenizer
+vectorizer = TfidfVectorizer(tokenizer=custom_tokenizer_lemmatized, max_features=3000)
+X_train_tfidf = vectorizer.fit_transform(X_train)
+X_test_tfidf = vectorizer.transform(X_test)
 
-# Vectorize speech column
-X_custom = custom_vectorizer.fit_transform(df["speech"])
-y = df["party"]
+# Train RandomForest with custom tokenizer features
+rf = RandomForestClassifier(n_estimators=300, random_state=42)
+rf.fit(X_train_tfidf, y_train)
+rf_preds = rf.predict(X_test_tfidf)
 
-# Stratified split
-X_train, X_test, y_train, y_test = train_test_split(X_custom, y, test_size=0.2, stratify=y, random_state=26)
-
-# Train a linear SVM
-svm_model = SVC(kernel="linear", random_state=42)
-svm_model.fit(X_train, y_train)
-svm_preds = svm_model.predict(X_test)
-
-# Output evaluation
-print("\nQ2(e) – SVM Results using custom tokenizer:")
-print("Macro F1 Score:", round(f1_score(y_test, svm_preds, average="macro"), 4))
-print("Classification Report:\n", classification_report(y_test, svm_preds))
-
+# Evaluate
+print("\nQ2(e) Attempt 2 – Random Forest with Lemmatized Tokenizer:")
+print("Macro F1 Score:", round(f1_score(y_test, rf_preds, average='macro'), 4))
+print("Classification Report:\n", classification_report(y_test, rf_preds))
