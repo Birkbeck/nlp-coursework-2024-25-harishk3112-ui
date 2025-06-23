@@ -1,6 +1,11 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score, classification_report
+
 
 
 # Q2(a) : Data Preprocessing
@@ -48,20 +53,22 @@ print("Test set size:", X_test.shape[0])
 
 # Q2(c) : Model Training 
 
-# Train RandomForest (n_estimators=300)
+# Train a Random Forest classifier with 300 trees
 rf = RandomForestClassifier(n_estimators=300, random_state=42)
-rf.fit(X_train, y_train)
-rf_preds = rf.predict(X_test)
+rf.fit(X_train, y_train)  
+rf_predictions = rf.predict(X_test) 
 
-print("RandomForest Results:")
-print("Macro F1 score:", f1_score(y_test, rf_preds, average="macro"))
-print(classification_report(y_test, rf_preds))
+# Print results for Random Forest
+print("\nQ2(c) – Random Forest Results:")
+print("Macro F1 Score:", round(f1_score(y_test, rf_predictions, average='macro'), 4))
+print("Classification Report:\n", classification_report(y_test, rf_predictions))
 
-# Train SVM
-svm = SVC(kernel="linear")
-svm.fit(X_train, y_train)
-svm_preds = svm.predict(X_test)
+# Train a SVM classifier with linear kernel
+svm = SVC(kernel="linear", random_state=42)
+svm.fit(X_train, y_train)  
+svm_predictions = svm.predict(X_test)  
 
-print("\nSVM Results:")
-print("Macro F1 score:", f1_score(y_test, svm_preds, average="macro"))
-print(classification_report(y_test, svm_preds))
+# Print results for SVM
+print("\nQ2(c) – SVM Results:")
+print("Macro F1 Score:", round(f1_score(y_test, svm_predictions, average='macro'), 4))
+print("Classification Report:\n", classification_report(y_test, svm_predictions))
