@@ -201,10 +201,6 @@ def subjects_by_verb_pmi(doc, target_verb):
     return sorted(pmi_scores, key=lambda x: x[1], reverse=True)
 
 
-
-
-
-
 if __name__ == "__main__":
     # Q1(a): Read novels
     df = read_novels()
