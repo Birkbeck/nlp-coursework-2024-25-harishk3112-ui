@@ -6,6 +6,9 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score, classification_report
 
+import re
+
+
 
 
 # Q2(a) : Data Preprocessing
@@ -105,3 +108,31 @@ svm_ngram_preds = svm_ngram.predict(X_test_ngram)
 print("\nQ2(d) – SVM with ngram (1,3) Results:")
 print("Macro F1 Score:", round(f1_score(y_test_ngram, svm_ngram_preds, average='macro'), 4))
 print("Classification Report:\n", classification_report(y_test_ngram, svm_ngram_preds))
+
+
+# Q2(e) : Evaluate models with custom tokenizer
+# Simple custom tokenizer using basic regex
+def simple_tokenizer(text):
+    tokens = re.findall(r"\b\w+\b", text.lower())
+    return tokens
+
+# Apply TF-IDF with this custom tokenizer (limit to 3000 features, using up to trigrams)
+custom_vectorizer = TfidfVectorizer(tokenizer=simple_tokenizer, ngram_range=(1, 3), max_features=3000)
+
+# Vectorize speech column
+X_custom = custom_vectorizer.fit_transform(df["speech"])
+y = df["party"]
+
+# Stratified split
+X_train, X_test, y_train, y_test = train_test_split(X_custom, y, test_size=0.2, stratify=y, random_state=26)
+
+# Train a linear SVM
+svm_model = SVC(kernel="linear", random_state=42)
+svm_model.fit(X_train, y_train)
+svm_preds = svm_model.predict(X_test)
+
+# Output evaluation
+print("\nQ2(e) – SVM Results using custom tokenizer:")
+print("Macro F1 Score:", round(f1_score(y_test, svm_preds, average="macro"), 4))
+print("Classification Report:\n", classification_report(y_test, svm_preds))
+
