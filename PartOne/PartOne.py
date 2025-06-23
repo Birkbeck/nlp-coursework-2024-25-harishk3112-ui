@@ -198,7 +198,7 @@ def subjects_by_verb_pmi(doc, target_verb):
 if __name__ == "__main__":
     # Q1(a): Read novels
     df = read_novels()
-    print("\nQ1(a) – First 5 rows of the novels dataframe:")
+    print("\nQ1(a)  First 5 rows of the novels dataframe:")
     print(df[["title", "author", "year"]].head())
 
     # Q1(b): TTR using NLTK
