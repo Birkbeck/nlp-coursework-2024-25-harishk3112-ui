@@ -1,7 +1,3 @@
-#Re-assessment template 2025
-
-# Note: The template functions here and the dataframe format for structuring your solution is a suggested but not mandatory approach. You can use a different approach if you like, as long as you clearly answer the questions and communicate your answers clearly.
-
 import os
 import pandas as pd
 import math
@@ -13,8 +9,6 @@ from collections import Counter
 
 from nltk.tokenize import word_tokenize
 import string
-
-
 
 
 nlp = spacy.load("en_core_web_sm")
@@ -127,7 +121,7 @@ def flesch_kincaid(df):
 
 def parse(df, pickle_path=Path("PartOne/parsed_novels.pkl")):
     """
-    Q1(e): Parse each novel’s text with spaCy, pickle the DataFrame,
+    Q1(e): Parse each novel's text with spaCy, pickle the DataFrame,
     then load it back and return it (with a new 'doc' column of Doc objects).
     """
     # 1. run nlp() over each raw text
@@ -137,7 +131,7 @@ def parse(df, pickle_path=Path("PartOne/parsed_novels.pkl")):
     df2 = df.copy()
     df2["doc"] = parsed_docs
 
-    # 3. write out & immediately reload from pickle
+    # 3. write out and immediately reload from pickle
     print(f"→ parse(): writing pickle to {pickle_path}")
     df2.to_pickle(pickle_path)
     print("✓ parse(): pickle created")
@@ -214,13 +208,13 @@ if __name__ == "__main__":
         tokens = [t for t in tokens if t.isalpha()]
         ttr = len(set(tokens)) / len(tokens) if tokens else 0
         ttr_scores[row["title"]] = round(ttr, 4)
-    print("\nQ1(b) – Type-Token Ratios (TTR):")
+    print("\nQ1(b) - Type-Token Ratios (TTR):")
     for title, score in ttr_scores.items():
         print(f"{title}: {score}")
 
     # Q1(c): Flesch-Kincaid scores
     fk_scores = flesch_kincaid(df)
-    print("\nQ1(c) – Flesch-Kincaid Reading Grade Level:")
+    print("\nQ1(c) : Flesch-Kincaid Reading Grade Level:")
     for title, score in fk_scores.items():
         print(f"{title}: {score}")
 
@@ -228,21 +222,21 @@ if __name__ == "__main__":
     df = parse(df)
 
     # Q1(f)(1): Most common syntactic objects
-    print("\nQ1(f)(1) – Top 10 syntactic objects in each novel:")
+    print("\nQ1(f)(1):  Top 10 syntactic objects in each novel:")
     for _, row in df.iterrows():
         print(f"\n{row['title']}")
         for obj, count in object_counts(row["doc"])[:10]:
             print(f"{obj}: {count}")
 
     # Q1(f)(2): Most common subjects of verb 'hear'
-    print("\nQ1(f)(2) – Top 10 subjects of verb 'hear':")
+    print("\nQ1(f)(2) : Top 10 subjects of verb 'hear':")
     for _, row in df.iterrows():
         print(f"\n{row['title']}")
         for subj, count in subjects_by_verb_count(row["doc"], "hear")[:10]:
             print(f"{subj}: {count}")
 
     # Q1(f)(3): PMI scores for subjects of 'hear'
-    print("\nQ1(f)(3) – PMI scores for subjects of 'hear':")
+    print("\nQ1(f)(3) : PMI scores for subjects of 'hear':")
     for _, row in df.iterrows():
         print(f"\n{row['title']}")
         for subj, pmi in subjects_by_verb_pmi(row["doc"], "hear")[:10]:
