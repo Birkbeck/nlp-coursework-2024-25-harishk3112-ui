@@ -5,15 +5,23 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score, classification_report
+from sklearn.linear_model import LogisticRegression
+
 
 import re
 import spacy
+import nltk
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+import string
+
+nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 
 
 # Load spaCy model
 nlp = spacy.load("en_core_web_sm")
-
-
 
 
 # Q2(a) : Data Preprocessing
@@ -67,7 +75,7 @@ rf.fit(X_train, y_train)
 rf_predictions = rf.predict(X_test) 
 
 # Print results for Random Forest
-print("\nQ2(c) – Random Forest Results:")
+print("\nQ2(c)  Random Forest Results:")
 print("Macro F1 Score:", round(f1_score(y_test, rf_predictions, average='macro'), 4))
 print("Classification Report:\n", classification_report(y_test, rf_predictions))
 
@@ -77,7 +85,7 @@ svm.fit(X_train, y_train)
 svm_predictions = svm.predict(X_test)  
 
 # Print results for SVM
-print("\nQ2(c) – SVM Results:")
+print("\nQ2(c)  SVM Results:")
 print("Macro F1 Score:", round(f1_score(y_test, svm_predictions, average='macro'), 4))
 print("Classification Report:\n", classification_report(y_test, svm_predictions))
 
@@ -100,7 +108,7 @@ rf_ngram.fit(X_train_ngram, y_train_ngram)
 rf_ngram_preds = rf_ngram.predict(X_test_ngram)
 
 # Print results
-print("\nQ2(d) – Random Forest with ngram (1,3) Results:")
+print("\nQ2(d)  Random Forest with ngram (1,3) Results:")
 print("Macro F1 Score:", round(f1_score(y_test_ngram, rf_ngram_preds, average='macro'), 4))
 print("Classification Report:\n", classification_report(y_test_ngram, rf_ngram_preds))
 
@@ -110,30 +118,62 @@ svm_ngram.fit(X_train_ngram, y_train_ngram)
 svm_ngram_preds = svm_ngram.predict(X_test_ngram)
 
 # Print results
-print("\nQ2(d) – SVM with ngram (1,3) Results:")
+print("\nQ2(d)  SVM with ngram (1,3) Results:")
 print("Macro F1 Score:", round(f1_score(y_test_ngram, svm_ngram_preds, average='macro'), 4))
 print("Classification Report:\n", classification_report(y_test_ngram, svm_ngram_preds))
 
 
 # Q2(e) : Evaluate models with custom tokenizer
-def custom_tokenizer_lemmatized(text):
-    doc = nlp(text)
-    return [
-        token.lemma_.lower() for token in doc
-        if token.is_alpha and not token.is_stop
-    ]
 
-# Apply new TF-IDF with custom tokenizer
-vectorizer = TfidfVectorizer(tokenizer=custom_tokenizer_lemmatized, max_features=3000)
-X_train_tfidf = vectorizer.fit_transform(X_train)
-X_test_tfidf = vectorizer.transform(X_test)
+# Custom tokenizer using lemmatization and filtering out non-alphabetic tokens
+def custom_tokenizer(text):
+    lemmatizer = WordNetLemmatizer()
+    tokens = word_tokenize(text.lower())
+    tokens = [token for token in tokens if token.isalpha()]
+    return [lemmatizer.lemmatize(token) for token in tokens]
 
-# Train RandomForest with custom tokenizer features
-rf = RandomForestClassifier(n_estimators=300, random_state=42)
-rf.fit(X_train_tfidf, y_train)
-rf_preds = rf.predict(X_test_tfidf)
+#  TF-IDF vectorizer with custom tokenizer (limit to 3000 features)
+vectorizer = TfidfVectorizer(
+    tokenizer=custom_tokenizer,
+    max_features=3000,
+    stop_words="english"
+)
 
-# Evaluate
-print("\nQ2(e) Attempt 2 – Random Forest with Lemmatized Tokenizer:")
-print("Macro F1 Score:", round(f1_score(y_test, rf_preds, average='macro'), 4))
-print("Classification Report:\n", classification_report(y_test, rf_preds))
+# Apply vectorizer on speeches
+X = vectorizer.fit_transform(df["speech"])
+y = df["party"]
+
+# Train/Test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=26
+)
+
+# Train all 3 classifiers
+classifiers = {
+    "Random Forest": RandomForestClassifier(n_estimators=300, random_state=42),
+    "SVM": SVC(kernel="linear", random_state=42),
+    "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42)
+}
+
+# Evaluate and find the best classifier
+best_model = None
+best_score = 0
+best_report = ""
+
+for name, model in classifiers.items():
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    macro_f1 = f1_score(y_test, predictions, average="macro")
+    report = classification_report(y_test, predictions)
+
+    if macro_f1 > best_score:
+        best_model = name
+        best_score = macro_f1
+        best_report = report
+
+# Print results of the best classifier
+print(f"\nQ2(e) Best Classifier: {best_model}")
+print("Macro F1 Score:", round(best_score, 4))
+print("Classification Report:\n", best_report)
+
+
