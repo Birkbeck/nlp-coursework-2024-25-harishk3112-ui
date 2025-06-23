@@ -44,3 +44,24 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(" TF-IDF shape:", X.shape)
 print("Train set size:", X_train.shape[0])
 print("Test set size:", X_test.shape[0])
+
+
+# Q2(c) : Model Training 
+
+# Train RandomForest (n_estimators=300)
+rf = RandomForestClassifier(n_estimators=300, random_state=42)
+rf.fit(X_train, y_train)
+rf_preds = rf.predict(X_test)
+
+print("RandomForest Results:")
+print("Macro F1 score:", f1_score(y_test, rf_preds, average="macro"))
+print(classification_report(y_test, rf_preds))
+
+# Train SVM
+svm = SVC(kernel="linear")
+svm.fit(X_train, y_train)
+svm_preds = svm.predict(X_test)
+
+print("\nSVM Results:")
+print("Macro F1 score:", f1_score(y_test, svm_preds, average="macro"))
+print(classification_report(y_test, svm_preds))
