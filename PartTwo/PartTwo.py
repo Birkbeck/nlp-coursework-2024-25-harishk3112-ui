@@ -72,3 +72,36 @@ svm_predictions = svm.predict(X_test)
 print("\nQ2(c) – SVM Results:")
 print("Macro F1 Score:", round(f1_score(y_test, svm_predictions, average='macro'), 4))
 print("Classification Report:\n", classification_report(y_test, svm_predictions))
+
+# Q2(d) : Train classifiers using TF-IDF with unigrams, bigrams, and trigrams (max 3000 features)
+
+# Create new TF-IDF vectorizer with unigrams, bigrams, and trigrams
+vectorizer_ngram = TfidfVectorizer(stop_words='english', max_features=3000, ngram_range=(1, 3))
+
+# Fit and transform the speech data
+X_ngram = vectorizer_ngram.fit_transform(df["speech"])
+
+# Train/test split again with ngram features
+X_train_ngram, X_test_ngram, y_train_ngram, y_test_ngram = train_test_split(
+    X_ngram, y, test_size=0.2, stratify=y, random_state=26
+)
+
+# Train Random Forest
+rf_ngram = RandomForestClassifier(n_estimators=300, random_state=42)
+rf_ngram.fit(X_train_ngram, y_train_ngram)
+rf_ngram_preds = rf_ngram.predict(X_test_ngram)
+
+# Print results
+print("\nQ2(d) – Random Forest with ngram (1,3) Results:")
+print("Macro F1 Score:", round(f1_score(y_test_ngram, rf_ngram_preds, average='macro'), 4))
+print("Classification Report:\n", classification_report(y_test_ngram, rf_ngram_preds))
+
+# Train SVM
+svm_ngram = SVC(kernel="linear", random_state=42)
+svm_ngram.fit(X_train_ngram, y_train_ngram)
+svm_ngram_preds = svm_ngram.predict(X_test_ngram)
+
+# Print results
+print("\nQ2(d) – SVM with ngram (1,3) Results:")
+print("Macro F1 Score:", round(f1_score(y_test_ngram, svm_ngram_preds, average='macro'), 4))
+print("Classification Report:\n", classification_report(y_test_ngram, svm_ngram_preds))
