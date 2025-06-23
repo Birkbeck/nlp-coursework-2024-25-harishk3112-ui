@@ -1,6 +1,6 @@
 Answers to the text questions go here.
-
-Q1.(D) 
+Part - 1
+Q1.(d) 
 
 -Very Short Texts: Flesch–Kincaid uses average sentence length and syllable count. 
                     For example in a small title/tweet , just a single short sentence or a one long word will throw these averages off. 
@@ -9,3 +9,25 @@ Q1.(D)
 -Specialized language: There are languages which includes names,slang,technical terms, dialogue which does not follow normal English patterns.
                        The syllable counts and sentence structure which it knows is not there so the grade level can be too high or too low.
     
+Part -2 
+Q2.(f)
+
+- My custom tokenizer will first convert all the texts to lowercase to keep consistency.
+
+- Then it will use NLTK to tokenize the text into words.
+
+- It will remove all the non-alphabectic tokens such as numbers and punctuation which reduces noise.
+
+- Each left over word is lemmatizzed which converts it to its basic from in the context of tenses.
+
+- This process ensures there is no unnecessary variation, standardizes the text and only 
+  focus on meaningful words.
+
+- This helps to reduce the vocabulary size, by improving accuracy and reducing overfitting.
+
+Performance:
+
+- The best result was from SVM with a F1 score of 0.596.
+
+- This proves that a focused tokenizer can provide stable performance while keeping the number of features
+  limited to 3000.
