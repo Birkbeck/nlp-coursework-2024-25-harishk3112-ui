@@ -126,7 +126,6 @@ print("Classification Report:\n", classification_report(y_test_ngram, svm_ngram_
 
 # Q2(e) : Evaluate models with custom tokenizer
 
-
 # Custom tokenizer with spaCy, contractions, and named entities
 def spacy_tokenizer(text):
     expanded_text = contractions.fix(text)
@@ -144,7 +143,7 @@ def spacy_tokenizer(text):
     entities = [ent.text.lower() for ent in doc.ents]
     return tokens + entities
 
-# Q2(e) - Custom tokenizer, n-grams, and feature extraction
+#  Custom tokenizer, n-grams, and feature extraction
 vectorizer = TfidfVectorizer(
     tokenizer=spacy_tokenizer,
     max_features=3000,
@@ -163,6 +162,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # Train and evaluate both models (SVM and Random Forest)
+# Trained 2 models as per the question it explicitely mentioned for the above used classifiers.
 classifiers = {
     "Random Forest": RandomForestClassifier(n_estimators=300, random_state=42, class_weight='balanced'),
     "SVM": SVC(kernel="linear", random_state=42, class_weight='balanced')
@@ -185,8 +185,6 @@ for name, clf in classifiers.items():
 print("\nBest Classifier:", best_clf_name)
 print("Macro F1 Score:", round(best_score, 4))
 print("Classification Report:\n", classification_report(y_test, best_preds))
-
-
 
 
 
