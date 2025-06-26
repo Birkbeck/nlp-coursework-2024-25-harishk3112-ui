@@ -127,159 +127,67 @@ print("Classification Report:\n", classification_report(y_test_ngram, svm_ngram_
 # Q2(e) : Evaluate models with custom tokenizer
 
 
-def enhanced_political_tokenizer(text):
-    """
-    Enhanced tokenizer using spaCy for political speech classification.
-    
-    """
-    
-    # Political terms and phrases to preserve
-    political_terms = {
-        'labour', 'conservative', 'liberal', 'democrat', 'tory', 'whig',
-        'parliament', 'government', 'minister', 'secretary', 'prime', 
-        'chancellor', 'brexit', 'eu', 'uk', 'nhs', 'gdp', 'budget',
-        'tax', 'economy', 'policy', 'bill', 'legislation', 'vote',
-        'election', 'constituency', 'mp', 'lord', 'commons', 'lords',
-        'britain', 'british', 'england', 'scotland', 'wales', 'ireland'
-    }
-    
-    # Important political phrases, convert to single tokens
-    political_phrases = {
-        'prime minister': 'primeminister',
-        'foreign secretary': 'foreignsecretary',
-        'home secretary': 'homesecretary',
-        'shadow minister': 'shadowminister',
-        'member of parliament': 'memberofparliament',
-        'house of commons': 'houseofcommons',
-        'house of lords': 'houseoflords',
-        'civil service': 'civilservice',
-        'public sector': 'publicsector',
-        'private sector': 'privatesector',
-        'social security': 'socialsecurity',
-        'health service': 'healthservice',
-        'national health service': 'nationalhealthservice'
-    }
-    
-    # Important sentiment and modal words for political context
-    important_modifiers = {
-        'not', 'never', 'always', 'must', 'should', 'will', 'would', 'could',
-        'support', 'oppose', 'against', 'favour', 'believe', 'think',
-        'agree', 'disagree', 'increase', 'decrease', 'reform', 'change',
-        'improve', 'reduce', 'strengthen', 'weaken', 'more', 'less',
-        'better', 'worse', 'higher', 'lower', 'great', 'important'
-    }
-    
-    # Preprocess text
-    text_processed = text.lower()
-    
-    # Replace political phrases with single tokens
-    for phrase, replacement in political_phrases.items():
-        text_processed = text_processed.replace(phrase, replacement)
-    
-    # Expand contractions
-    text_processed = contractions.fix(text_processed)
-    
-    # Process with spaCy
-    doc = nlp(text_processed)
-    
-    processed_tokens = []
-    
-    for token in doc:
-        # Skip whitespace, punctuation, and very short tokens
-        if token.is_space or token.is_punct or len(token.text) < 2:
-            continue
-            
-        # Get lemmatized form
-        lemma = token.lemma_.lower().strip()
-        
-        # Skip empty lemmas
-        if not lemma or len(lemma) < 2:
-            continue
-            
-        # Handle different cases
-        if token.like_url or token.like_email:
-            continue
-        elif token.is_digit:
-            # Keep years as special tokens
-            if len(token.text) == 4 and token.text.startswith(('19', '20')):
-                processed_tokens.append('YEAR')
-            continue
-        elif lemma in political_terms:
-            # Always keep political terms
-            processed_tokens.append(lemma)
-        elif lemma in important_modifiers:
-            # Keep important modifiers and sentiment words
-            processed_tokens.append(lemma)
-        elif (token.pos_ in ['NOUN', 'ADJ', 'VERB', 'ADV'] and 
-              not token.is_stop and 
-              len(lemma) > 2 and
-              any(c.isalpha() for c in lemma)):
-            # Keep meaningful content words
-            processed_tokens.append(lemma)
-        elif token.pos_ == 'PROPN' and len(lemma) > 2:
-            # Keep proper nouns 
-            processed_tokens.append(lemma)
-    
-    return processed_tokens
+# Custom tokenizer with spaCy, contractions, and named entities
+def spacy_tokenizer(text):
+    expanded_text = contractions.fix(text)
+    doc = nlp(expanded_text)
+    # Lemmatized tokens
+    tokens = [
+        token.lemma_.lower()
+        for token in doc
+        if not token.is_stop
+        and not token.is_punct
+        and not token.like_num
+        and token.is_alpha
+    ]
+    # Named entities
+    entities = [ent.text.lower() for ent in doc.ents]
+    return tokens + entities
 
-# Create custom vectorizer with optimized parameters
-vectorizer_custom = TfidfVectorizer(
+# Q2(e) - Custom tokenizer, n-grams, and feature extraction
+vectorizer = TfidfVectorizer(
+    tokenizer=spacy_tokenizer,
     max_features=3000,
-    tokenizer=enhanced_political_tokenizer,
-    lowercase=False,
-    token_pattern=None,
     ngram_range=(1, 3),
-    min_df=3,
-    max_df=0.9,
-    sublinear_tf=True,
-    norm='l2'
+    min_df=2,
+    max_df=0.95,
+    stop_words=None  # Handled in tokenizer
 )
 
-# Get the train and test text data using the same indices from your existing splits
-# We need to reconstruct the original text data for the same train/test split
-train_indices = X_train_ngram.nonzero()[0]  # Get indices from existing split
-test_indices = X_test_ngram.nonzero()[0]
+X = vectorizer.fit_transform(df["speech"])
+y = df["party"]
 
-# Create arrays to get the same train/test split as before
-df_reset = df.reset_index(drop=True)
-X_speech = df_reset["speech"]
-y_speech = df_reset["party"]
-
-# Use the same train_test_split as before to get the same indices
-X_train_text, X_test_text, y_train_custom, y_test_custom = train_test_split(
-    X_speech, y_speech, test_size=0.2, stratify=y_speech, random_state=26
+# Train/test split (use same random_state as before)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, stratify=y, random_state=26
 )
 
-# Now apply the custom vectorizer
-X_train_custom = vectorizer_custom.fit_transform(X_train_text)
-X_test_custom = vectorizer_custom.transform(X_test_text)
+# Train and evaluate both models (SVM and Random Forest)
+classifiers = {
+    "Random Forest": RandomForestClassifier(n_estimators=300, random_state=42, class_weight='balanced'),
+    "SVM": SVC(kernel="linear", random_state=42, class_weight='balanced')
+}
 
-# Use your already trained classifiers , parameters but retrain with custom features
-rf_custom = RandomForestClassifier(n_estimators=300, random_state=42)
-svm_custom = SVC(kernel="linear", random_state=42)
+best_score = 0
+best_clf_name = ""
+best_preds = None
 
-# Train with custom features
-rf_custom.fit(X_train_custom, y_train_custom)
-svm_custom.fit(X_train_custom, y_train_custom)
+for name, clf in classifiers.items():
+    clf.fit(X_train, y_train)  # Use original (not oversampled) data
+    y_pred = clf.predict(X_test)
+    f1 = f1_score(y_test, y_pred, average='macro')
+    if f1 > best_score:
+        best_score = f1
+        best_clf_name = name
+        best_preds = y_pred
 
-# Make predictions
-rf_custom_preds = rf_custom.predict(X_test_custom)
-svm_custom_preds = svm_custom.predict(X_test_custom)
+# Print only the best model results
+print("\nBest Classifier:", best_clf_name)
+print("Macro F1 Score:", round(best_score, 4))
+print("Classification Report:\n", classification_report(y_test, best_preds))
 
-# Calculate F1 scores
-rf_f1 = f1_score(y_test_custom, rf_custom_preds, average='macro')
-svm_f1 = f1_score(y_test_custom, svm_custom_preds, average='macro')
 
-print("\nQ2(e) Custom Tokenizer Results:")
-print(f"Random Forest F1 Score: {round(rf_f1, 4)}")
-print(f"SVM F1 Score: {round(svm_f1, 4)}")
 
-# Print classification report for the best performing classifier
-if rf_f1 > svm_f1:
-    print(f"\nBest Performing Classifier: Random Forest")
-    print("Classification Report:")
-    print(classification_report(y_test_custom, rf_custom_preds))
-else:
-    print(f"\nBest Performing Classifier: SVM")
-    print("Classification Report:")
-    print(classification_report(y_test_custom, svm_custom_preds))
+
+
+
